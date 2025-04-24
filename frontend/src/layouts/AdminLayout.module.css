@@ -1,0 +1,56 @@
+.container {
+    display: flex;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    /* Smooth transition for main content */
+}
+
+
+.mainContent {
+    flex-grow: 1;
+}
+
+.content {
+    min-height: calc(100vh - var(--navbar-height, 56px));
+    /* Adjust for fixed navbar height */
+    background-color: #f5f7fa;
+    padding-top: var(--navbar-height, 56px);
+    /* Ensure content doesn't overlap navbar */
+}
+
+.dark-mode {
+    background-color: #1c2526;
+    color: #e5e7eb;
+}
+
+.dark-mode .content {
+    background-color: #1c2526;
+}
+
+/* Ensure sidebar doesn't push content on smaller screens */
+@media (max-width: 991.98px) {
+    .sidebarOpen {
+        margin-left: 0;
+        /* No margin on smaller screens when "open" (it's likely off-screen) */
+    }
+}
+
+/* Define sidebar width for larger screens */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+    :root {
+        --sidebar-width: 220px;
+    }
+}
+
+/* Define default sidebar width for desktop */
+@media (min-width: 1200px) {
+    :root {
+        --sidebar-width: 260px;
+    }
+}
+
+/* You might want to define a default navbar height */
+:root {
+    --navbar-height: 56px;
+    /* Example default height */
+}

@@ -1,47 +1,54 @@
 import axios from 'axios';
 
 const API_BASE_URL = '/api';
-axios.defaults.withCredentials = true;
 
 export const authService = {
     async login(credentials) {
         try {
             const response = await axios.post(`${API_BASE_URL}/login`, credentials);
-            console.log('Login API Response Data:', response.data);
-            return response;
+            return { success: true, data: response.data, message: response.data.message || 'Login successful' };
         } catch (error) {
-            console.error('Login API Error:', error);
-            throw error;
+            console.error('Login API Error:', error.response?.data || error.message);
+            return { success: false, message: error.response?.data?.error || 'Login failed. Please try again.' };
         }
     },
 
     async register(userData) {
-        return axios.post(`${API_BASE_URL}/register`, userData);
+        try {
+            const response = await axios.post(`${API_BASE_URL}/register`, userData);
+            return { success: true, data: response.data, message: response.data.message || 'Registration successful' };
+        } catch (error) {
+            return { success: false, message: error.response?.data?.error || 'Registration failed. Please try again.' };
+        }
     },
 
     async logout() {
         const token = localStorage.getItem('authToken');
         if (token) {
-            return axios.post(`${API_BASE_URL}/logout`, {}, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            try {
+                await axios.post(`${API_BASE_URL}/logout`, {}, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                return { success: true, message: 'Logout successful' };
+            } catch (error) {
+                return { success: false, message: 'Logout failed. Please try again.' };
+            }
         }
-        return Promise.resolve();
+        return { success: true, message: 'No active session' };
     },
 
     async getAuthenticatedUser() {
         const token = localStorage.getItem('authToken');
         if (token) {
-            return axios.get(`${API_BASE_URL}/user`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            try {
+                const response = await axios.get(`${API_BASE_URL}/user`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                return { success: true, data: response.data, message: 'User data retrieved successfully' };
+            } catch (error) {
+                return { success: false, message: error.response?.data?.error || 'Failed to retrieve user data.' };
+            }
         }
-        return Promise.reject({ message: 'No token found' });
+        return { success: false, message: 'No token found' };
     },
 };
-
-axios.get('/api/test/test-cookie').then(response => {
-    console.log(response.data);
-}).catch(error => {
-    console.error(error);
-});

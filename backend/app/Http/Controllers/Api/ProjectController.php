@@ -37,8 +37,29 @@ class ProjectController extends Controller
             $query->latest();
         }
 
-        return ProjectResource::collection($query->paginate(10));
+        $projects = $query->paginate(10); // Get paginated projects
+
+        // Calculate totals
+        $totalProjects = Project::count();
+        $totalPendingProjects = Project::where('status', 'pending')->count();
+        $totalApprovalProjects = Project::where('status', 'approved')->count();
+        $totalRejectProjects = Project::where('status', 'rejected')->count();
+
+        $message = "Projects retrieved successfully.";
+        $success = true;
+
+        // Return the response with totals, projects data, message and success status.
+        return response()->json([
+            'success' => $success,
+            'message' => $message,
+            'total_projects' => $totalProjects,
+            'total_pending_projects' => $totalPendingProjects,
+            'total_approval_projects' => $totalApprovalProjects,
+            'total_reject_projects' => $totalRejectProjects,
+            'projects' => ProjectResource::collection($projects),
+        ], 200); // 200 OK
     }
+
 
     public function store(ProjectSubmissionRequest $request)
     {

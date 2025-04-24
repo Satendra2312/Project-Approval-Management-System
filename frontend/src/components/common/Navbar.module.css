@@ -1,0 +1,89 @@
+.navbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.5rem 1rem;
+}
+
+.toggleButton {
+    font-size: 1.25rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.brand {
+    font-weight: 600;
+    color: #1e40af;
+    margin-right: 1rem;
+    /* Add some space between brand and other elements */
+}
+
+.navbarToggle {
+    border: none;
+}
+
+.navbarToggle:focus {
+    box-shadow: none;
+}
+
+.navbarCollapse {
+    /* Removed flex-grow: 0; to allow content to expand */
+}
+
+.searchForm {
+    max-width: 300px;
+    width: 100%;
+}
+
+.searchInput {
+    border-radius: 0.375rem;
+}
+
+.searchButton {
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+}
+
+.themeButton {
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+}
+
+.dropdownToggle {
+    color: #1f2937 !important;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+}
+
+.userIcon {
+    font-size: 1.25rem;
+}
+
+.dark-mode .navbar {
+    background-color: #2d3748;
+    border-bottom: 1px solid #4b5563;
+}
+
+.dark-mode .brand {
+    color: #93c5fd;
+}
+
+.dark-mode .dropdownToggle {
+    color: #e5e7eb !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 991.98px) {
+    .searchForm {
+        max-width: 100%;
+        margin-bottom: 0.5rem;
+        /* Add some space below search on smaller screens */
+    }
+
+    /* Ensure the toggle button is always visible */
+    .toggleButton.d-lg-none {
+        display: inline-block !important;
+    }
+}
+
+@media (max-width: 575.98px) {}

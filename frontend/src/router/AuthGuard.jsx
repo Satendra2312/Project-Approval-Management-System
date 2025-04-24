@@ -14,7 +14,7 @@ export const AuthGuard = ({ allowedRoles }) => {
     }
 
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-        return <Navigate to="/unauthorized" />; // Create an Unauthorized page
+        return <Navigate to="/unauthorized" />;
     }
 
     return <Outlet />;

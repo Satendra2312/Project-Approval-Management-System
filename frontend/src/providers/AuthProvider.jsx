@@ -1,78 +1,109 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, memo, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
 import { authService } from '../services/authService';
 
 export const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
+const AuthProviderComponent = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
+    // useEffect 
     useEffect(() => {
         const fetchAuth = async () => {
-            try {
-                const response = await authService.getAuthenticatedUser();
-                setUser(response.data);
-            } catch (error) {
-                console.error('Authentication check failed:', error.message);
-                setUser(null);
-            } finally {
+            const storedToken = localStorage.getItem('authToken');
+            console.log('Get Token Local:', storedToken);
+            if (storedToken) {
+                try {
+                    const response = await authService.getAuthenticatedUser();
+                    console.log('Authentication:', response);
+                    setUser(response.data.user);
+                } catch (error) {
+                    console.error('Authentication Error:', error);
+                    toast.error('Authentication failed. Please login again.');
+                    localStorage.removeItem('authToken');
+                    setUser(null);
+                } finally {
+                    setLoading(false);
+                }
+            } else {
                 setLoading(false);
             }
         };
-
         fetchAuth();
+        console.log(fetchAuth());
     }, [navigate]);
 
-    const login = async (credentials) => {
+    // useCallback 
+    const login = useCallback(async (credentials) => {
         setLoading(true);
         try {
-            await authService.login(credentials);
-            const response = await authService.getAuthenticatedUser();
-            setUser(response.data);
-            navigate(response.data.role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+            const result = await authService.login(credentials);
+            if (!result.success) {
+                toast.error(result.message);
+                console.log('Error Login:', result.message);
+            } else {
+                setUser(result.data.user);
+                toast.success(result.message);
+                console.log('Success Login:', result.message);
+                localStorage.setItem('authToken', result.data.token);
+                navigate(result.data.user.role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+            }
         } catch (error) {
-            console.error('Login failed:', error.message);
-            throw error;
-        } finally {
+            console.error("Login Error", error);
+            toast.error("Login failed");
+        }
+        finally {
             setLoading(false);
         }
-    };
+    }, [authService, navigate, setUser, toast]);
 
-    const register = async (userData) => {
+    const register = useCallback(async (userData) => {
         setLoading(true);
         try {
-            await authService.register(userData);
-            const response = await authService.getAuthenticatedUser();
-            setUser(response.data);
-            navigate(response.data.role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+            const result = await authService.register(userData);
+            if (!result.success) {
+                toast.error(result.message);
+            } else {
+                setUser(result.data.user);
+                toast.success(result.message);
+                localStorage.setItem('authToken', result.data.token);
+                navigate(result.data.user.role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+            }
         } catch (error) {
-            console.error('Registration failed:', error.message);
-            throw error;
-        } finally {
+            console.error("Register Error", error);
+            toast.error("Registration Failed");
+        }
+        finally {
             setLoading(false);
         }
-    };
+    }, [authService, navigate, setUser, toast]);
 
-    const logout = async () => {
+    const logout = useCallback(async () => {
         setLoading(true);
         try {
-            await authService.logout();
-        } catch (error) {
-            console.error('Logout failed:', error.message);
-        } finally {
+            const result = await authService.logout();
+            toast.info(result.message);
+            localStorage.removeItem('authToken');
             setUser(null);
             navigate('/login');
+        } catch (error) {
+            console.error("Logout Error", error);
+            toast.error("Logout Failed");
+        }
+        finally {
             setLoading(false);
         }
-    };
+    }, [authService, navigate, setUser, toast]);
 
-    const isAuthenticated = () => !!user;
+    // useMemo 
+    const isAuthenticated = useMemo(() => () => !!user, [user]);
+    const isAdmin = useMemo(() => () => user?.role === 'admin', [user]);
 
-    const isAdmin = () => user && user.role === 'admin';
-
-    const contextValue = {
+    // contextValue 
+    const contextValue = useMemo(() => ({
         user,
         loading,
         login,
@@ -80,15 +111,20 @@ export const AuthProvider = ({ children }) => {
         logout,
         isAuthenticated,
         isAdmin,
-    };
+    }), [user, loading, login, register, logout, isAuthenticated, isAdmin]);
 
     return (
         <AuthContext.Provider value={contextValue}>
+            <ToastContainer position="top-right" autoClose={3000} />
             {loading ? <div>Loading...</div> : children}
         </AuthContext.Provider>
     );
 };
 
+// AuthProvider
+export const AuthProvider = memo(AuthProviderComponent);
+
+// useAuth 
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
