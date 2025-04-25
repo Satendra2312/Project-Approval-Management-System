@@ -1,15 +1,11 @@
-import React, { useState } from 'react';
-import { Navbar, Nav, Form, Button, Dropdown, Badge } from 'react-bootstrap';
-import { FaSearch, FaMoon, FaSun, FaUserCircle, FaSignOutAlt, FaBell } from 'react-icons/fa';
+import React from 'react';
+import { Navbar, Nav, Button, Dropdown, Badge } from 'react-bootstrap';
+import { FaUserCircle, FaSignOutAlt, FaBell } from 'react-icons/fa';
 import styles from './Navbar.module.css';
+import { useAuth } from '../../providers/AuthProvider';
 
 const Navigation = ({ toggleSidebar }) => {
-    const [isDarkMode, setIsDarkMode] = useState(false);
-
-    const toggleTheme = () => {
-        setIsDarkMode(!isDarkMode);
-        document.body.classList.toggle('dark-mode');
-    };
+    const { user, logout } = useAuth();
 
     return (
         <Navbar expand="lg" className={`${styles.navbar} shadow-sm`} sticky="top">
@@ -24,34 +20,27 @@ const Navigation = ({ toggleSidebar }) => {
                 </Button>
 
                 <Navbar.Brand href="/" className={`${styles.brand}`}>
-                    Dashboard
+                    Project Approval Management System
                 </Navbar.Brand>
+
                 <Navbar.Toggle aria-controls="navbar-nav" className={styles.navbarToggle} />
 
                 <Navbar.Collapse id="navbar-nav" className="justify-content-end">
                     <Nav className="align-items-center">
-                        <Button
-                            variant="outline-secondary"
-                            onClick={toggleTheme}
-                            className={`${styles.themeButton} me-2`}
-                            aria-label="Toggle Theme"
-                        >
-                            {isDarkMode ? <FaSun /> : <FaMoon />}
-                        </Button>
                         <Dropdown align="end">
                             <Dropdown.Toggle variant="link" id="dropdown-user" className={styles.dropdownToggle}>
                                 <FaUserCircle className={styles.userIcon} />
-                                <span className="d-none d-md-inline ms-1">Admin</span>
-                                <Badge bg="danger" className="ms-2">3</Badge>
+                                <span className="d-none d-md-inline ms-1">{user?.name || "Guest"}</span>
                             </Dropdown.Toggle>
                             <Dropdown.Menu>
-                                <Dropdown.Item href="/profile">Profile</Dropdown.Item>
-                                <Dropdown.Item href="/notifications">
-                                    <FaBell className="me-2" />
-                                    Notifications <Badge bg="danger">3</Badge>
+                                <Dropdown.Item disabled>
+                                    <strong>{user?.name || "Guest"}</strong><br />
+                                    <small>{user?.role || "Unknown Role"}</small>
                                 </Dropdown.Item>
                                 <Dropdown.Divider />
-                                <Dropdown.Item href="/logout">
+                                <Dropdown.Item href="/admin/profile">Profile</Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Item onClick={logout}>
                                     <FaSignOutAlt className="me-2" />
                                     Logout
                                 </Dropdown.Item>

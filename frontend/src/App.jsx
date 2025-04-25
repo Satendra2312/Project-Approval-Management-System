@@ -12,9 +12,14 @@ import AdminLayout from './layouts/AdminLayout';
 function App() {
   const { isAuthenticated, user, loading } = useAuth();
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  /*   if (loading) {
+      return (
+        <div className="loading-screen">
+          <div className="spinner"></div>
+          <p>Loading, please wait...</p>
+        </div>
+      );
+    } */
   return (
     <>
       <Routes>

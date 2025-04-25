@@ -8,10 +8,10 @@ use App\Http\Resources\ProjectResource;
 use App\Jobs\SendProjectNotificationEmail;
 use App\Models\AuditLog;
 use App\Models\Project;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ProjectController extends Controller
 {
@@ -21,55 +21,44 @@ class ProjectController extends Controller
     {
         $query = Project::with('user');
 
-        // Filtering
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->has('user_id')) {
-            $query->where('user_id', $request->user_id);
+        // Apply filters dynamically
+        $filters = collect(['status', 'user_id'])
+            ->filter(fn($key) => $request->has($key))
+            ->mapWithKeys(fn($key) => [$key => $request->$key]);
+
+        if ($filters->isNotEmpty()) {
+            $query->where($filters->toArray());
         }
 
         // Sorting
-        if ($request->has('sort_by') && in_array($request->sort_by, ['created_at', 'title', 'status'])) {
-            $sortDirection = $request->has('sort_direction') && in_array($request->sort_direction, ['asc', 'desc']) ? $request->sort_direction : 'desc';
-            $query->orderBy($request->sort_by, $sortDirection);
-        } else {
-            $query->latest();
-        }
+        $sortColumn = $request->get('sort_by', 'created_at');
+        $sortDirection = $request->get('sort_direction', 'desc');
+        $query->orderBy($sortColumn, $sortDirection);
 
-        $projects = $query->paginate(10); // Get paginated projects
+        // Paginate results
+        $projects = $query->paginate(10);
 
-        // Calculate totals
-        $totalProjects = Project::count();
-        $totalPendingProjects = Project::where('status', 'pending')->count();
-        $totalApprovalProjects = Project::where('status', 'approved')->count();
-        $totalRejectProjects = Project::where('status', 'rejected')->count();
-
-        $message = "Projects retrieved successfully.";
-        $success = true;
-
-        // Return the response with totals, projects data, message and success status.
         return response()->json([
-            'success' => $success,
-            'message' => $message,
-            'total_projects' => $totalProjects,
-            'total_pending_projects' => $totalPendingProjects,
-            'total_approval_projects' => $totalApprovalProjects,
-            'total_reject_projects' => $totalRejectProjects,
+            'success' => true,
+            'message' => 'Projects retrieved successfully.',
+            'totals' => [
+                'all' => Project::count(),
+                'pending' => Project::where('status', 'pending')->count(),
+                'approved' => Project::where('status', 'approved')->count(),
+                'rejected' => Project::where('status', 'rejected')->count(),
+            ],
             'projects' => ProjectResource::collection($projects),
-        ], 200); // 200 OK
+        ], 200);
     }
-
 
     public function store(ProjectSubmissionRequest $request)
     {
         try {
             $validated = $request->validated();
 
-            $path = null;
-            if ($request->hasFile('file')) {
-                $path = $request->file('file')->store('project_files', 'public');
-            }
+            $path = $request->hasFile('file')
+                ? $request->file('file')->store('project_files', 'public')
+                : null;
 
             $project = Project::create([
                 'user_id' => auth()->id(),
@@ -98,23 +87,21 @@ class ProjectController extends Controller
         }
     }
 
-
     public function show(Project $project)
     {
         return new ProjectResource($project->load('user', 'approvals'));
     }
 
-    public function approve(Project $project, Request $request)
+    public function approve(Project $project)
     {
         try {
             $this->authorize('approve', $project);
 
-            $result = DB::select("CALL sp_approve_project(?, ?)", [$project->id, auth()->id()]);
+            $result = DB::select("CALL sp_update_project_status(?, ?, 'approved', NULL)", [$project->id, auth()->id()]);
 
             if ($result && $result[0]->status === 'success') {
-
-                // Send approval email
                 SendProjectNotificationEmail::dispatch($project, 'approved');
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Project approved successfully',
@@ -124,19 +111,15 @@ class ProjectController extends Controller
                         'approved_at' => now()->toDateTimeString(),
                     ],
                 ]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Failed to approve project',
-                    'error' => $result ? $result[0]->message ?? 'Unknown error from stored procedure' : 'Error executing stored procedure',
-                ], 500);
             }
-        } catch (AuthorizationException $e) {
+
             return response()->json([
                 'success' => false,
-                'message' => 'This action is unauthorized.',
-                'error' => $e->getMessage(),
-            ], 403);
+                'message' => 'Failed to approve project',
+                'error' => $result[0]->message ?? 'Unknown error from stored procedure',
+            ], 500);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized', 'error' => $e->getMessage()], 403);
         }
     }
 
@@ -145,40 +128,36 @@ class ProjectController extends Controller
         try {
             $this->authorize('reject', $project);
 
-            // Check if already rejected
             if ($project->status === 'rejected') {
                 return response()->json(['message' => 'Project is already rejected.'], 422);
             }
 
-            // Validate input
             $request->validate([
                 'reason' => 'required|string',
             ]);
 
-            // Update project status
-            $project->update(['status' => 'rejected']);
+            DB::transaction(function () use ($project, $request) {
+                $project->update(['status' => 'rejected']);
 
-            // Store rejection in approvals
-            $project->approvals()->create([
-                'admin_id' => auth()->id(),
-                'status' => 'rejected',
-                'reason' => $request->reason,
-            ]);
+                $project->approvals()->create([
+                    'admin_id' => auth()->id(),
+                    'status' => 'rejected',
+                    'reason' => $request->reason,
+                ]);
 
-            // Log rejection
-            AuditLog::create([
-                'user_id' => auth()->id(),
-                'action' => 'project_rejected',
-                'auditable_id' => $project->id,
-                'auditable_type' => Project::class,
-            ]);
+                AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'project_rejected',
+                    'auditable_id' => $project->id,
+                    'auditable_type' => Project::class,
+                ]);
+            });
 
-            // Send email (queued)
             SendProjectNotificationEmail::dispatch($project, 'rejected', $request->reason);
 
             return response()->json(['message' => 'Project rejected successfully']);
-        } catch (AuthorizationException $e) {
-            return response()->json(['message' => $e->getMessage()], 403);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return response()->json(['message' => 'Unauthorized', 'error' => $e->getMessage()], 403);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Something went wrong.', 'error' => $e->getMessage()], 500);
         }

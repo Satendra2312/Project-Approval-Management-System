@@ -10,113 +10,85 @@ const AuthProviderComponent = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    // useEffect 
     useEffect(() => {
         const fetchAuth = async () => {
+            setLoading(true);
             const storedToken = localStorage.getItem('authToken');
-            console.log('Get Token Local:', storedToken);
+
             if (storedToken) {
                 try {
                     const response = await authService.getAuthenticatedUser();
-                    console.log('Authentication:', response);
                     setUser(response.data.user);
                 } catch (error) {
-                    console.error('Authentication Error:', error);
                     toast.error('Authentication failed. Please login again.');
                     localStorage.removeItem('authToken');
                     setUser(null);
-                } finally {
-                    setLoading(false);
                 }
-            } else {
-                setLoading(false);
             }
+            setLoading(false);
         };
+
         fetchAuth();
-        console.log(fetchAuth());
+    }, []);
+
+    const handleAuthProcess = useCallback(async (authFunction, credentials) => {
+        try {
+            const result = await authFunction(credentials);
+            if (!result.success) throw new Error(result.message || 'Authentication failed');
+
+            setUser(result.data.user);
+            localStorage.setItem('authToken', result.data.token);
+            navigate(result.data.user.role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+            toast.success(result.message || 'Login successful');
+        } catch (error) {
+            console.log('login error:', error)
+            toast.error(error.message || 'Authentication failed');
+        }
     }, [navigate]);
 
-    // useCallback 
-    const login = useCallback(async (credentials) => {
-        setLoading(true);
-        try {
-            const result = await authService.login(credentials);
-            if (!result.success) {
-                toast.error(result.message);
-                console.log('Error Login:', result.message);
-            } else {
-                setUser(result.data.user);
-                toast.success(result.message);
-                console.log('Success Login:', result.message);
-                localStorage.setItem('authToken', result.data.token);
-                navigate(result.data.user.role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
-            }
-        } catch (error) {
-            console.error("Login Error", error);
-            toast.error("Login failed");
-        }
-        finally {
-            setLoading(false);
-        }
-    }, [authService, navigate, setUser, toast]);
+    const login = useCallback(
+        (credentials) => handleAuthProcess(authService.login, credentials),
+        [handleAuthProcess]
+    );
 
-    const register = useCallback(async (userData) => {
-        setLoading(true);
-        try {
-            const result = await authService.register(userData);
-            if (!result.success) {
-                toast.error(result.message);
-            } else {
-                setUser(result.data.user);
-                toast.success(result.message);
-                localStorage.setItem('authToken', result.data.token);
-                navigate(result.data.user.role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
-            }
-        } catch (error) {
-            console.error("Register Error", error);
-            toast.error("Registration Failed");
-        }
-        finally {
-            setLoading(false);
-        }
-    }, [authService, navigate, setUser, toast]);
+    const register = useCallback(
+        (userData) => handleAuthProcess(authService.register, userData),
+        [handleAuthProcess]
+    );
 
     const logout = useCallback(async () => {
-        setLoading(true);
         try {
-            const result = await authService.logout();
-            toast.info(result.message);
+            await authService.logout();
             localStorage.removeItem('authToken');
             setUser(null);
             navigate('/login');
+            toast.info('Logged out successfully');
         } catch (error) {
-            console.error("Logout Error", error);
-            toast.error("Logout Failed");
+            toast.error('Logout failed');
         }
-        finally {
-            setLoading(false);
-        }
-    }, [authService, navigate, setUser, toast]);
+    }, [navigate]);
 
-    // useMemo 
-    const isAuthenticated = useMemo(() => () => !!user, [user]);
-    const isAdmin = useMemo(() => () => user?.role === 'admin', [user]);
-
-    // contextValue 
     const contextValue = useMemo(() => ({
         user,
         loading,
         login,
         register,
         logout,
-        isAuthenticated,
-        isAdmin,
-    }), [user, loading, login, register, logout, isAuthenticated, isAdmin]);
+        isAuthenticated: () => !!user,
+        isAdmin: () => user?.role === 'admin',
+    }), [user, loading, login, register, logout]);
 
     return (
         <AuthContext.Provider value={contextValue}>
             <ToastContainer position="top-right" autoClose={3000} />
-            {loading ? <div>Loading...</div> : children}
+            {loading ? (
+                <div className="loading-screen">
+                    <div className="spinner"></div>
+                    <p>Loading, please wait...</p>
+                </div>
+            ) : (
+                children
+            )}
         </AuthContext.Provider>
     );
 };
@@ -124,7 +96,7 @@ const AuthProviderComponent = ({ children }) => {
 // AuthProvider
 export const AuthProvider = memo(AuthProviderComponent);
 
-// useAuth 
+// useAuth Hook
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

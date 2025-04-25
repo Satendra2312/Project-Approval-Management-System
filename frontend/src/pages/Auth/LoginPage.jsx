@@ -7,11 +7,10 @@ import styles from './LoginPage.module.css';
 
 const LoginPage = () => {
     const [error, setError] = useState('');
-    const { login, loading } = useAuth();
+    const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleLogin = async (credentials) => {
-
         setError('');
         try {
             await login(credentials);
@@ -38,13 +37,6 @@ const LoginPage = () => {
                         <p>Don't have an account? <Link href="#">Register here</Link></p>
 
                     </div>
-                    {loading && (
-                        <div className="d-flex justify-content-center mt-3">
-                            <Spinner animation="border" role="status">
-                                <span className="visually-hidden">Loading...</span>
-                            </Spinner>
-                        </div>
-                    )}
                 </div>
             </div>
         </Container>
