@@ -1,0 +1,14 @@
+.profileContainer {
+    max-width: 500px;
+    margin: 50px auto;
+}
+
+.profileCard {
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.profileIcon {
+    font-size: 80px;
+    color: #007bff;
+}

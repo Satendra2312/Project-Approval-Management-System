@@ -31,28 +31,34 @@ const AuthProviderComponent = ({ children }) => {
         fetchAuth();
     }, []);
 
-    const handleAuthProcess = useCallback(async (authFunction, credentials) => {
+    const handleAuthProcess = useCallback(async (authFunction, credentials, actionType = 'login') => {
         try {
             const result = await authFunction(credentials);
             if (!result.success) throw new Error(result.message || 'Authentication failed');
-
+            console.log(`Result ${actionType}:`, result);
             setUser(result.data.user);
             localStorage.setItem('authToken', result.data.token);
-            navigate(result.data.user.role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
-            toast.success(result.message || 'Login successful');
+
+            if (actionType === 'login') {
+                navigate(result.data.user.role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+            } else if (actionType === 'register') {
+                navigate('/login');
+            }
+
+            toast.success(result.message || `${actionType.charAt(0).toUpperCase() + actionType.slice(1)} successful`);
         } catch (error) {
-            console.log('login error:', error)
+            console.log(`Auth Error (${actionType}):`, error);
             toast.error(error.message || 'Authentication failed');
         }
     }, [navigate]);
 
     const login = useCallback(
-        (credentials) => handleAuthProcess(authService.login, credentials),
+        (credentials) => handleAuthProcess(authService.login, credentials, 'login'),
         [handleAuthProcess]
     );
 
     const register = useCallback(
-        (userData) => handleAuthProcess(authService.register, userData),
+        (userData) => handleAuthProcess(authService.register, userData, 'register'),
         [handleAuthProcess]
     );
 

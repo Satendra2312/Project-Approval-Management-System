@@ -1,0 +1,85 @@
+.dashboard {
+    padding: 20px;
+}
+
+.title {
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cardTitle {
+    font-size: 1.25rem;
+    margin-bottom: 15px;
+    color: #555;
+}
+
+.icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+
+.cardValue {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.table {
+    margin-top: 15px;
+    color: #444;
+}
+
+.tableHeader {
+    cursor: pointer;
+    user-select: none;
+    color: #555;
+}
+
+.badge {
+    padding: 0.3em 0.6em;
+    border-radius: 0.25em;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #fff;
+    display: inline-block;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+}
+
+.badgeSuccess {
+    background-color: #28a745;
+}
+
+.badgeWarning {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+/* Dark Mode Styles (optional) */
+.dark-mode .title,
+.dark-mode .cardTitle,
+.dark-mode .cardValue,
+.dark-mode .table {
+    color: #e0e0e0;
+}
+
+.dark-mode .card {
+    background-color: #333;
+    box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+    border: 1px solid #555;
+}
+
+.dark-mode .table thead th {
+    color: #ccc;
+}
+
+.dark-mode .table tbody td {
+    color: #eee;
+}

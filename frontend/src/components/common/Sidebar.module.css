@@ -1,51 +1,109 @@
+:root {
+    --sidebar-width: 280px;
+    --sidebar-collapsed-width: 80px;
+    --sidebar-bg: #1b1b29;
+    --nav-link-color: #d3d3d3;
+    --nav-link-active-color: #ffffff;
+    --nav-link-active-bg: #414147;
+    --brand-color: #ffffff;
+    --search-bg: #2c2c3b;
+    --search-icon-color: #a5b4fc;
+    --search-text-color: #ffffff;
+    --search-placeholder-color: #a5b4fc;
+    --no-results-color: #a5b4fc;
+    --resize-handle-color: #a5b4fc;
+    --transition-duration: 0.3s;
+}
+
 .sidebar {
     height: 100vh;
     position: fixed;
     top: 0;
     left: 0;
-    width: var(--sidebar-width, 260px);
-    background-color: #1b1b29;
-    transition: width 0.3s ease, transform 0.3s ease;
+    width: var(--sidebar-width);
+    background-color: var(--sidebar-bg);
+    transition: width var(--transition-duration) ease, transform var(--transition-duration) ease;
     z-index: 1050;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     padding: 1rem;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.sidebarHeader {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--sidebar-bg);
+    padding: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    transition: padding var(--transition-duration) ease;
+    /* Add transition */
+}
+
+.sidebarHeader.collapsed {
+    padding: 0.5rem 0;
 }
 
 .collapsed {
-    width: 80px;
+    width: var(--sidebar-collapsed-width);
 }
 
 .collapsed .sidebarText,
-.collapsed .sidebarBrand span {
-    visibility: hidden;
+.collapsed .sidebarBrand span,
+.collapsed .searchContainer {
     opacity: 0;
-    transition: opacity 0.2s ease;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    display: none;
+    /* Remove element from layout */
 }
 
 .navLink {
-    color: #d3d3d3;
+    color: var(--nav-link-color);
     display: flex;
     align-items: center;
     padding: 0.75rem 1rem;
-    border-radius: 0.375rem;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease,
+        transform 0.1s ease, padding var(--transition-duration) ease;
+    /* Added padding */
     text-decoration: none !important;
     gap: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    /* Prevent text wrapping */
+    overflow: hidden;
+    /* Ensure content doesn't overflow */
 }
 
 .navLink:hover,
 .navLink.active {
-    color: #ffffff;
-    background-color: #414147;
+    color: var(--nav-link-active-color);
+    background-color: var(--nav-link-active-bg);
+    transform: translateX(5px);
+}
+
+.navLink.collapsed {
+    padding: 0.75rem;
 }
 
 .sidebarBrand {
-    color: #ffffff;
+    color: var(--brand-color);
     font-size: 1.25rem;
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    transition: padding var(--transition-duration) ease;
+    /* Add transition */
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebarBrand.collapsed {
+    padding: 0.5rem;
 }
 
 .collapseButton {
@@ -63,7 +121,8 @@
     z-index: 1040;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity var(--transition-duration) ease,
+        visibility var(--transition-duration) ease;
 }
 
 .overlay.active {
@@ -71,64 +130,134 @@
     visibility: visible;
 }
 
-/* Dark mode */
-.dark-mode .sidebar {
-    background-color: #1e293b;
+.searchContainer {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: var(--search-bg);
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    transition: opacity 0.2s ease, padding var(--transition-duration) ease;
+    /* Added padding */
+    white-space: nowrap;
+    overflow: hidden;
 }
 
-.dark-mode .navLink {
-    color: #a5b4fc;
+.searchContainer.collapsed {
+    padding: 0.5rem;
 }
 
-.dark-mode .navLink:hover,
-.dark-mode .navLink.active {
-    color: #ffffff;
-    background-color: #475569;
+.searchIcon {
+    color: var(--search-icon-color);
+    margin-right: 0.5rem;
 }
 
-/* Mobile Styles */
+.searchInput {
+    background: transparent;
+    border: none;
+    color: var(--search-text-color);
+    width: 100%;
+    outline: none;
+}
+
+.searchInput::placeholder {
+    color: var(--search-placeholder-color);
+}
+
+.noResults {
+    color: var(--no-results-color);
+    padding: 1rem;
+    text-align: center;
+}
+
+.resizeHandle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 5px;
+    height: 100%;
+    background: transparent;
+    cursor: col-resize;
+    transition: background 0.2s ease;
+}
+
+.resizeHandle:hover {
+    background: var(--resize-handle-color);
+}
+
+/* Submenu styles */
+.submenuWrapper {
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, opacity 0.2s ease;
+    padding-left: 20px;
+}
+
+.submenuHidden {
+    max-height: 0;
+    opacity: 0;
+}
+
+.submenuVisible {
+    max-height: 1000px;
+    opacity: 1;
+}
+
+/* Active submenu toggle */
+.submenuWrapper.active {
+    max-height: 1000px;
+    opacity: 1;
+}
+
+/* Icon wrapper */
+.iconWrapper {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+.icon {
+    transition: transform 0.2s ease;
+}
+
+.navContainer {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile sidebar toggle button */
 .mobileToggleButton {
     position: fixed;
     top: 1rem;
     left: 1rem;
     z-index: 1060;
-}
-
-.sidebar.openMobile {
-    transform: translateX(0);
-    transition: transform 0.3s ease;
+    padding: 0.5rem;
+    border-radius: 4px;
 }
 
 @media (max-width: 991.98px) {
     .sidebar {
-        width: 280px;
-        position: fixed;
+        width: var(--sidebar-width);
         transform: translateX(-100%);
-        z-index: 1050;
-        transition: transform 0.3s ease;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
     }
 
-    .collapsed {
-        width: 80px;
-    }
-
-    .sidebar.collapsed.openMobile {
-        width: 80px;
+    .sidebar.openMobile {
         transform: translateX(0);
     }
 
-    .collapsed .sidebarText {
-        visibility: hidden;
-        opacity: 0;
-    }
-
-    .sidebarBrand span {
-        visibility: visible !important;
-        opacity: 1;
+    .sidebar.collapsed.openMobile {
+        width: var(--sidebar-collapsed-width);
+        transform: translateX(0);
     }
 
     .collapseButton {
         display: none !important;
+    }
+
+    .resizeHandle {
+        display: none;
     }
 }
 
@@ -138,11 +267,15 @@
         top: 0;
     }
 
-    .mobileToggleButton {
-        display: none;
-    }
-
+    .mobileToggleButton,
     .overlay {
         display: none !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .mobileToggleButton {
+        top: 0.5rem;
+        left: 0.5rem;
     }
 }

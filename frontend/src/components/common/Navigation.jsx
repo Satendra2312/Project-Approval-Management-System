@@ -3,9 +3,11 @@ import { Navbar, Nav, Button, Dropdown, Badge } from 'react-bootstrap';
 import { FaUserCircle, FaSignOutAlt, FaBell } from 'react-icons/fa';
 import styles from './Navbar.module.css';
 import { useAuth } from '../../providers/AuthProvider';
+import { useNavigate } from 'react-router-dom';
 
 const Navigation = ({ toggleSidebar }) => {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
     return (
         <Navbar expand="lg" className={`${styles.navbar} shadow-sm`} sticky="top">
@@ -38,7 +40,7 @@ const Navigation = ({ toggleSidebar }) => {
                                     <small>{user?.role || "Unknown Role"}</small>
                                 </Dropdown.Item>
                                 <Dropdown.Divider />
-                                <Dropdown.Item href="/admin/profile">Profile</Dropdown.Item>
+                                <Dropdown.Item onClick={() => navigate(`/${user?.role}/profile`)}>Profile</Dropdown.Item>
                                 <Dropdown.Divider />
                                 <Dropdown.Item onClick={logout}>
                                     <FaSignOutAlt className="me-2" />

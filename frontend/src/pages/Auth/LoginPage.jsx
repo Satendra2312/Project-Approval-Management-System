@@ -31,11 +31,9 @@ const LoginPage = () => {
                     <h2>Sign in to your account</h2>
                     {error && <Alert variant="danger">{error}</Alert>}
                     <LoginForm onSubmit={handleLogin} />
-
                     <div className={styles.links}>
-                        <p><Link href="#">Forgot password?</Link></p>
-                        <p>Don't have an account? <Link href="#">Register here</Link></p>
-
+                        <p><Link to="#">Forgot password?</Link></p>
+                        <p>Don't have an account? <Link to="/register">Register here</Link></p>
                     </div>
                 </div>
             </div>

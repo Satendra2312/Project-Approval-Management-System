@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
-    Table, Button, Form, Badge, Spinner, Modal,
-    Dropdown, Row, Col, Card, InputGroup,
-    FormControl, Stack
+    Table, Button, Form, Badge, Spinner, Row, Col, Card, InputGroup,
+    FormControl
 } from "react-bootstrap";
 import { projectServices } from "../../services/projectService";
 import { useAuth } from "../../providers/AuthProvider";
@@ -14,16 +13,12 @@ const ProjectList = () => {
     const [allProjects, setAllProjects] = useState([]);
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [selectedProject, setSelectedProject] = useState(null);
-    const [reason, setReason] = useState("");
     const [filters, setFilters] = useState({
         status: "all",
         dateRange: "all",
         search: ""
     });
     const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-    const [showApproveModal, setShowApproveModal] = useState(false);
-    const [projectToApprove, setProjectToApprove] = useState(null);
 
     useEffect(() => {
         fetchProjects();
@@ -32,12 +27,13 @@ const ProjectList = () => {
     const fetchProjects = async () => {
         setLoading(true);
         try {
-            const result = await projectServices.fetchProjects(
-                localStorage.getItem("authToken")
-            );
-
+            const result = await projectServices.fetchProjects(localStorage.getItem("authToken"));
+            console.log('User Project List', result);
             if (result.success && result.data?.projects) {
-                setAllProjects(result.data.projects);
+                const userProjects = result.data.projects.filter(
+                    project => project.submittedBy?.id === user?.id
+                );
+                setAllProjects(userProjects);
             } else {
                 throw new Error(result.message || "Failed to load projects.");
             }
@@ -79,44 +75,6 @@ const ProjectList = () => {
         setProjects(filteredProjects);
     }, [filteredProjects]);
 
-    const handleStatusChange = async (projectId, action) => {
-        if (action === "reject" && !reason.trim()) {
-            toast.warning("Reason is required for rejection.");
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const result = await projectServices.updateProjectStatus(projectId, action, reason);
-            console.log('Project Action', result);
-            if (result.success) {
-                toast.success(`Project successfully ${action}d`);
-                setAllProjects(prevProjects =>
-                    prevProjects.map(p =>
-                        p.id === projectId ? { ...p, status: action, lastUpdated: new Date().toISOString() } : p
-                    )
-                );
-            } else {
-                throw new Error(result.message || `Failed to ${action} project`);
-            }
-        } catch (error) {
-            console.error("Error updating project status:", error);
-            toast.error(error.message);
-            if (action === 'rejected') {
-                setSelectedProject(null);
-            } else if (action === 'approved') {
-                setProjectToApprove(null);
-            }
-        } finally {
-            setLoading(false);
-            if (action === 'reject') {
-                setSelectedProject(null);
-                setReason("");
-            } else if (action === 'approve') {
-                setProjectToApprove(null);
-            }
-        }
-    };
 
     const sortTable = (key) => {
         const direction = sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
@@ -166,23 +124,6 @@ const ProjectList = () => {
             dateRange: "all",
             search: ""
         });
-    };
-
-    const handleShowApproveModal = (project) => {
-        setProjectToApprove(project);
-        setShowApproveModal(true);
-    };
-
-    const handleCloseApproveModal = () => {
-        setShowApproveModal(false);
-        setProjectToApprove(null);
-    };
-
-    const handleConfirmApprove = () => {
-        if (projectToApprove?.id) {
-            handleStatusChange(projectToApprove.id, "approve");
-            handleCloseApproveModal();
-        }
     };
 
     return (
@@ -273,7 +214,6 @@ const ProjectList = () => {
                                                 </div>
                                             </th>
                                         ))}
-                                        {user?.role === "admin" && <th style={{ minWidth: "200px" }}>Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -283,7 +223,7 @@ const ProjectList = () => {
                                                 <td className="align-middle">{project.title}</td>
                                                 <td className="align-middle">{project.submittedBy?.name || 'N/A'}</td>
                                                 <td className="align-middle">
-                                                    {format(new Date(project.submissionDate), 'MMM dd, yyyy')}
+                                                    {format(new Date(project.submissionDate), 'MMM dd,')}
                                                 </td>
                                                 <td className="align-middle">
                                                     <Badge pill bg={getStatusColor(project.status)} className="px-3 py-2">
@@ -291,37 +231,13 @@ const ProjectList = () => {
                                                     </Badge>
                                                 </td>
                                                 <td className="align-middle">
-                                                    {format(new Date(project.lastUpdated), 'MMM dd, yyyy HH:mm')}
+                                                    {format(new Date(project.lastUpdated), 'MMM dd, HH:mm')}
                                                 </td>
-                                                {user?.role === "admin" && (
-                                                    <td className="align-middle">
-                                                        <Stack direction="horizontal" gap={2}>
-                                                            <Button
-                                                                variant="success"
-                                                                size="sm"
-                                                                onClick={() => handleShowApproveModal(project)}
-                                                                disabled={project.status.toLowerCase() === "approved" || loading}
-                                                            >
-                                                                {loading && projectToApprove?.id === project.id && <Spinner animation="border" size="sm" />}
-                                                                {!loading && "Approved"}
-                                                            </Button>
-                                                            <Button
-                                                                variant="outline-danger"
-                                                                size="sm"
-                                                                onClick={() => setSelectedProject(project)}
-                                                                disabled={project.status.toLowerCase() === "rejected" || loading}
-                                                            >
-                                                                {loading && selectedProject?.id === project.id && <Spinner animation="border" size="sm" />}
-                                                                {!loading && "Rejected"}
-                                                            </Button>
-                                                        </Stack>
-                                                    </td>
-                                                )}
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={user?.role === "admin" ? 6 : 5} className="text-center py-4">
+                                            <td colSpan={5} className="text-center py-4">
                                                 No projects found matching your criteria
                                             </td>
                                         </tr>
@@ -332,61 +248,6 @@ const ProjectList = () => {
                     </Card.Body>
                 </Card>
             )}
-
-            {/* Approve Confirmation Modal */}
-            <Modal show={showApproveModal} onHide={handleCloseApproveModal} centered>
-                <Modal.Header closeButton className="border-0 pb-0">
-                    <Modal.Title>Confirm Approve</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p className="mb-0">
-                        Are you sure you want to approve project: <strong>{projectToApprove?.title}</strong>?
-                    </p>
-                </Modal.Body>
-                <Modal.Footer className="border-0 pt-0">
-                    <Button variant="outline-secondary" onClick={handleCloseApproveModal}>
-                        Cancel
-                    </Button>
-                    <Button variant="success" onClick={handleConfirmApprove} disabled={loading}>
-                        {loading ? <Spinner animation="border" size="sm" /> : "Confirm Approve"}
-                    </Button>
-                </Modal.Footer>
-            </Modal>
-
-            {/* Rejection Modal */}
-            <Modal show={!!selectedProject} onHide={() => setSelectedProject(null)} centered>
-                <Modal.Header closeButton className="border-0 pb-0">
-                    <Modal.Title>Reject Project</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p className="mb-3">
-                        You're about to reject project: <strong>{selectedProject?.title}</strong>
-                    </p>
-                    <Form.Group controlId="rejectReason" className="mb-4">
-                        <Form.Label>Please provide a reason for rejection:</Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={3}
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                            required
-                            placeholder="Enter rejection reason..."
-                        />
-                    </Form.Group>
-                </Modal.Body>
-                <Modal.Footer className="border-0 pt-0">
-                    <Button variant="outline-secondary" onClick={() => setSelectedProject(null)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="danger"
-                        onClick={() => handleStatusChange(selectedProject?.id, "reject")}
-                        disabled={!reason.trim() || loading}
-                    >
-                        {loading ? <Spinner animation="border" size="sm" /> : "Confirm Rejection"}
-                    </Button>
-                </Modal.Footer>
-            </Modal>
         </div>
     );
 };

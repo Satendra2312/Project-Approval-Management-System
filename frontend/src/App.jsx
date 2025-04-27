@@ -7,19 +7,13 @@ import { UserGuard } from './router/UserGuard';
 import { useAuth } from './providers/AuthProvider';
 import { adminRoutes } from './router/adminRoutes';
 import AdminLayout from './layouts/AdminLayout';
+import UserLayout from './layouts/UserLayout';
+import { userRoutes } from './router/userRoutes';
 
 
 function App() {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
-  /*   if (loading) {
-      return (
-        <div className="loading-screen">
-          <div className="spinner"></div>
-          <p>Loading, please wait...</p>
-        </div>
-      );
-    } */
   return (
     <>
       <Routes>
@@ -40,6 +34,12 @@ function App() {
 
         <Route path="/user/*" element={<AuthGuard allowedRoles={['user']} />}>
           <Route element={<UserGuard />} />
+          <Route element={<UserLayout />}>
+            {
+              userRoutes.map((route) => (
+                <Route key={route.path} path={route.path} element={route.element} />
+              ))}
+          </Route>
         </Route>
 
         <Route
