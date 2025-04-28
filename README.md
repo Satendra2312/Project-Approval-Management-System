@@ -48,8 +48,8 @@ Project Video Link:   https://drive.google.com/file/d/1qUSHnNe9JPrlBnd1xceBpoAVl
 5.  Push to the branch (`git push origin feature/your-feature-name`).
 6.  Create a new Pull Request.
 
-Your Name - [your.email@example.com](mailto:your.email@example.com)
-[Your Website](https://www.example.com)
+Your Name - [sk.gautam9673@gmail.com](mailto:sk.gautam9673@gmail.com)
+[satendra.inceptionspark.com](satendra.inceptionspark.com)
 
 
 
