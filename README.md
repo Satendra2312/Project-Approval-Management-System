@@ -1,4 +1,4 @@
-Project Video Link:   https://drive.google.com/file/d/1qUSHnNe9JPrlBnd1xceBpoAVlQgJbKeE/view?usp=sharing
+# Project Video Link:   https://drive.google.com/file/d/1qUSHnNe9JPrlBnd1xceBpoAVlQgJbKeE/view?usp=sharing
 
 # Project Name - Project Approval Management System
 
@@ -48,7 +48,8 @@ Project Video Link:   https://drive.google.com/file/d/1qUSHnNe9JPrlBnd1xceBpoAVl
 5.  Push to the branch (`git push origin feature/your-feature-name`).
 6.  Create a new Pull Request.
 
-Your Name - [sk.gautam9673@gmail.com](mailto:sk.gautam9673@gmail.com)
+Satendra Kumar - [sk.gautam9673@gmail.com](mailto:sk.gautam9673@gmail.com).
+
 [satendra.inceptionspark.com](satendra.inceptionspark.com)
 
 
